@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useContext } from "react";
+import { AuthContext } from "../../contexts/AuthContext";
 import { Link, useNavigate } from "react-router";
 import logoImg from "../../assets/logo.svg";
 import { Container } from "../../components/container";
@@ -29,6 +30,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export function Register() {
+  const { handleInfoUser } = useContext(AuthContext);
   const navigate = useNavigate();
   const {
     register,
@@ -52,6 +54,12 @@ export function Register() {
       .then(async (user) => {
         await updateProfile(user.user, {
           displayName: data.name,
+        });
+
+        handleInfoUser({
+          name: data.name,
+          email: data.email,
+          uid: user.user.uid,
         });
 
         console.log("Cadastrado.");
