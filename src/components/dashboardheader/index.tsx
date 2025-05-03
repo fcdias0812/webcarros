@@ -12,7 +12,7 @@ export function DashboardHeader() {
       <Link to="/dashboard">Dashboard</Link>
       <Link to="/dashboard/new">Cadastrar novo carro</Link>
 
-      <button onClick={handleLogout} className="ml-auto">
+      <button onClick={handleLogout} className="ml-auto cursor-pointer">
         Sair da conta
       </button>
     </div>
