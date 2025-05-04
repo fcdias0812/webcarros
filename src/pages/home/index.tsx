@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Container } from "../../components/container";
 import { db } from "../../services/firebaseConnection";
-import { collection, query, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, getDocs, orderBy, where } from "firebase/firestore";
 import { Link } from "react-router";
 
 interface CarsProps {
@@ -24,41 +24,74 @@ interface CarImageProps {
 export function Home() {
   const [cars, setCars] = useState<CarsProps[]>([]);
   const [loadImages, setLoadImages] = useState<string[]>([]);
+  const [input, setInput] = useState("");
 
   useEffect(() => {
-    function loadCars() {
-      const carsRef = collection(db, "cars");
-      const queryRef = query(carsRef, orderBy("created", "desc"));
-
-      getDocs(queryRef)
-        .then((snapshot) => {
-          let listcars = [] as CarsProps[];
-
-          snapshot.forEach((doc) => {
-            listcars.push({
-              id: doc.id,
-              name: doc.data().name,
-              year: doc.data().year,
-              km: doc.data().km,
-              city: doc.data().city,
-              price: doc.data().price,
-              images: doc.data().images,
-              uid: doc.data().uid,
-            });
-          });
-
-          setCars(listcars);
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    }
-
     loadCars();
   }, []);
 
+  function loadCars() {
+    const carsRef = collection(db, "cars");
+    const queryRef = query(carsRef, orderBy("created", "desc"));
+
+    getDocs(queryRef)
+      .then((snapshot) => {
+        let listcars = [] as CarsProps[];
+
+        snapshot.forEach((doc) => {
+          listcars.push({
+            id: doc.id,
+            name: doc.data().name,
+            year: doc.data().year,
+            km: doc.data().km,
+            city: doc.data().city,
+            price: doc.data().price,
+            images: doc.data().images,
+            uid: doc.data().uid,
+          });
+        });
+
+        setCars(listcars);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  }
+
   function handleImageLoad(id: string) {
     setLoadImages((prevImageLoaded) => [...prevImageLoaded, id]);
+  }
+
+  async function handleSearchCar() {
+    if (!input) {
+      loadCars();
+      return;
+    }
+
+    setCars([]);
+    setLoadImages([]);
+
+    const q = query(
+      collection(db, "cars"),
+      where("name", ">=", input.toUpperCase()),
+      where("name", "<=", input.toUpperCase() + "\uf8ff")
+    );
+
+    const querySnapshot = await getDocs(q);
+    let listcars = [] as CarsProps[];
+    querySnapshot.forEach((doc) => {
+      listcars.push({
+        id: doc.id,
+        name: doc.data().name,
+        year: doc.data().year,
+        km: doc.data().km,
+        city: doc.data().city,
+        price: doc.data().price,
+        images: doc.data().images,
+        uid: doc.data().uid,
+      });
+    });
+    setCars(listcars);
   }
 
   return (
@@ -66,9 +99,14 @@ export function Home() {
       <section className="bg-white p-4 rounded-lg w-full max-w-3xl mx-auto flex justify-center items-center gap-2">
         <input
           placeholder="Digite o nome do carro"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
           className="w-full border-2 border-zinc-200 rounded-lg h-9 px-3 outline-none"
         />
-        <button className="bg-red-500 h-9 px-8 rounded-lg text-white font-medium text-lg cursor-pointer">
+        <button
+          onClick={handleSearchCar}
+          className="bg-red-500 h-9 px-8 rounded-lg text-white font-medium text-lg cursor-pointer"
+        >
           Buscar
         </button>
       </section>
