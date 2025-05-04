@@ -74,7 +74,6 @@ export function Dashboard() {
 
   async function handleDeleteCar(car: CarsProps) {
     const itemCar = car;
-
     const docRef = doc(db, "cars", itemCar.id);
     await deleteDoc(docRef);
 
