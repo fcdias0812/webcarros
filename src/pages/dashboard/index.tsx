@@ -2,8 +2,16 @@ import { useState, useEffect, useContext } from "react";
 import { Container } from "../../components/container";
 import { DashboardHeader } from "../../components/dashboardheader";
 import { FiTrash2 } from "react-icons/fi";
-import { db } from "../../services/firebaseConnection";
-import { collection, getDocs, where, query } from "firebase/firestore";
+import { db, storage } from "../../services/firebaseConnection";
+import {
+  collection,
+  getDocs,
+  where,
+  query,
+  doc,
+  deleteDoc,
+} from "firebase/firestore";
+import { ref, deleteObject } from "firebase/storage";
 import { AuthContext } from "../../contexts/AuthContext";
 
 interface CarsProps {
@@ -26,6 +34,7 @@ interface ImageCarProps {
 export function Dashboard() {
   const { user } = useContext(AuthContext);
   const [cars, setCars] = useState<CarsProps[]>([]);
+  const [loadImages, setLoadImages] = useState<string[]>([]);
 
   useEffect(() => {
     function loadCars() {
@@ -63,33 +72,76 @@ export function Dashboard() {
     loadCars();
   }, [user]);
 
+  async function handleDeleteCar(car: CarsProps) {
+    const itemCar = car;
+
+    const docRef = doc(db, "cars", itemCar.id);
+    await deleteDoc(docRef);
+
+    itemCar.images.map(async (image) => {
+      const imagePath = `images/${image.uid}/${image.name}`;
+      const imageRef = ref(storage, imagePath);
+
+      try {
+        await deleteObject(imageRef);
+        setCars(cars.filter((car) => car.id !== itemCar.id));
+      } catch (error) {
+        console.log("Erro ao excluir imagem.");
+        console.log(error);
+      }
+    });
+  }
+
+  function handleImageLoad(id: string) {
+    setLoadImages((prevImageLoaded) => [...prevImageLoaded, id]);
+  }
+
   return (
     <Container>
       <DashboardHeader />
 
       <main className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <section className="w-full bg-white rounded-lg relative">
-          <button
-            onClick={() => {}}
-            className="absolute bg-white w-14 h-14 rounded-full flex items-center justify-center right-2 top-2 cursor-pointer drop-shadow"
-          >
-            <FiTrash2 size={26} color="#000" />
-          </button>
-          <img
-            src="https://firebasestorage.googleapis.com/v0/b/webcarros-32ff4.firebasestorage.app/o/images%2Fy1FsEqxjIDTnCjH2OxUAkzKLgEn1%2Fb245606b-6f13-4bfc-a7fb-6375ad039fa7?alt=media&token=2adc31d1-73b4-4a69-9f41-ebd158f7bf3d"
-            alt="Foto do carro"
-            className="w-full rounded-lg mb-2 max-h-70"
-          />
-          <p className="font-bold mt-1 px-2 mb-2">Mercedez</p>
-          <div className="flex flex-col px-2">
-            <span className="text-zinc-700">Ano: 2016/2016 | 230.000 km</span>
-            <strong className="text-black font-bold mt-4">R$ 150.000</strong>
-          </div>
-          <div className="w-full h-px bg-slate-200 my-2"></div>
-          <div className="px-2 pb-2">
-            <span className="text-black">Indaiatuba - SP</span>
-          </div>
-        </section>
+        {cars.map((car) => (
+          <section key={car.id} className="w-full bg-white rounded-lg relative">
+            <button
+              onClick={() => handleDeleteCar(car)}
+              className="absolute bg-white w-14 h-14 rounded-full flex items-center justify-center right-2 top-2 cursor-pointer drop-shadow"
+            >
+              <FiTrash2 size={26} color="#000" />
+            </button>
+            <div
+              className="w-full h-72 rounded-lg mb-2 bg-slate-200"
+              style={{
+                display: loadImages.includes(car.id) ? "none" : "block",
+              }}
+            ></div>
+            <img
+              src={car.images[0].url}
+              alt="Foto do carro"
+              onLoad={() => handleImageLoad(car.id)}
+              className="w-full rounded-lg mb-2 max-h-70"
+              style={{
+                display: loadImages.includes(car.id) ? "block" : "none",
+              }}
+            />
+            <p className="font-bold mt-1 px-2 mb-2">{car.name}</p>
+            <div className="flex flex-col px-2">
+              <span className="text-zinc-700">
+                Ano: {car.year} | {car.km} km
+              </span>
+              <strong className="text-black font-bold mt-4">
+                {Number(car.price).toLocaleString("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                })}
+              </strong>
+            </div>
+            <div className="w-full h-px bg-slate-200 my-2"></div>
+            <div className="px-2 pb-2">
+              <span className="text-black">{car.city}</span>
+            </div>
+          </section>
+        ))}
       </main>
     </Container>
   );
