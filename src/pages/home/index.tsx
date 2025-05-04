@@ -89,7 +89,7 @@ export function Home() {
               ></div>
               <img
                 src={car.images[0].url}
-                alt="Carro"
+                alt="Foto do carro"
                 onLoad={() => handleImageLoad(car.id)}
                 className="w-full rounded-lg mb-2 max-h-72 hover:scale-105 transition-all"
                 style={{
