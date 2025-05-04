@@ -4,6 +4,7 @@ import { router } from "./App";
 import { RouterProvider } from "react-router";
 import AuthProvider from "./contexts/AuthContext";
 import "./index.css";
+import "swiper/swiper-bundle.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
