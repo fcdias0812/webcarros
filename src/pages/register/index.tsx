@@ -14,6 +14,7 @@ import {
   updateProfile,
   signOut,
 } from "firebase/auth";
+import toast from "react-hot-toast";
 
 const schema = z.object({
   name: z.string().nonempty("O campo nome é obrigatório."),
@@ -62,11 +63,11 @@ export function Register() {
           uid: user.user.uid,
         });
 
-        console.log("Cadastrado.");
+        toast.success("Usuário cadastrado com sucesso.");
         navigate("/dashboard", { replace: true });
       })
       .catch((error) => {
-        console.log("Erro ao cadastrar.");
+        toast.error("Não foi possível cadastrar o usuário.");
         console.log(error);
       });
   }
